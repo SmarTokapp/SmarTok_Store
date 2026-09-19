@@ -3,9 +3,10 @@
  *
  * Server-side only — reads credentials from:
  *   PRINTIFY_API_TOKEN  — Bearer token for the Printify API
- *   PRINTIFY_SHOP_ID    — SmarTok shop id
+ *   PRINTIFY_SHOP_ID    — (optional) manual override; if unset, the shop id
+ *                         is resolved automatically via GET /v1/shops.json
  *
- * All helpers degrade gracefully: if env vars are missing or the API
+ * All helpers degrade gracefully: if the token is missing or the API
  * errors, they return empty data so the storefront can fall back to
  * the "Coming Soon" placeholder instead of crashing.
  */
@@ -49,6 +50,12 @@ export interface PrintifyProduct {
   updated_at: string;
 }
 
+interface PrintifyShop {
+  id: number;
+  title: string;
+  channel: string;
+}
+
 interface PrintifyProductsResponse {
   current_page: number;
   data: PrintifyProduct[];
@@ -56,20 +63,60 @@ interface PrintifyProductsResponse {
   total: number;
 }
 
+// ─── Shop resolution ────────────────────────────────────────────────────────
+
+let cachedShopId: string | null = null;
+
+/**
+ * Resolves the shop id: PRINTIFY_SHOP_ID env override first, otherwise
+ * GET /v1/shops.json and use the first shop on the account. Cached for
+ * the process lifetime so pagination never re-fetches it.
+ */
+async function resolveShopId(token: string): Promise<string | null> {
+  if (process.env.PRINTIFY_SHOP_ID) return process.env.PRINTIFY_SHOP_ID;
+  if (cachedShopId) return cachedShopId;
+
+  const res = await fetch(`${PRINTIFY_API_BASE}/shops.json`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    next: { revalidate: 3600 },
+  });
+
+  if (!res.ok) {
+    console.error(`[printify] shops fetch failed: HTTP ${res.status}`);
+    return null;
+  }
+
+  const shops = (await res.json()) as PrintifyShop[];
+  const first = shops[0];
+  if (!first?.id) {
+    console.warn("[printify] Account has no shops.");
+    return null;
+  }
+
+  cachedShopId = String(first.id);
+  console.log(`[printify] Using shop "${first.title}" (id: ${cachedShopId})`);
+  return cachedShopId;
+}
+
 // ─── Fetch ──────────────────────────────────────────────────────────────────
 
 /**
- * Fetches all published products from the configured Printify shop.
+ * Fetches all published products from the Printify shop.
  * Paginates through `last_page` so nothing is missed.
  * Revalidates every 5 minutes (ISR).
  */
 export async function getProducts(): Promise<PrintifyProduct[]> {
   const token = process.env.PRINTIFY_API_TOKEN;
-  const shopId = process.env.PRINTIFY_SHOP_ID;
-  if (!token || !shopId) {
-    console.warn("[printify] PRINTIFY_API_TOKEN or PRINTIFY_SHOP_ID not set — returning empty catalog.");
+  if (!token) {
+    console.warn("[printify] PRINTIFY_API_TOKEN not set — returning empty catalog.");
     return [];
   }
+
+  const shopId = await resolveShopId(token);
+  if (!shopId) return [];
 
   try {
     const products: PrintifyProduct[] = [];
