@@ -21,5 +21,13 @@
   "cart.checkout": "Checkout",
   "cart.remove": "Remove",
   "cart.checkoutNote": "Checkout is coming soon — Stripe integration in progress.",
+  "cart.processing": "Processing…",
+  "cart.checkoutError": "Checkout failed — please try again.",
+  "success.title": "Thank you for your order!",
+  "success.body": "Your purchase directly supports SmarTok development. A confirmation email is on its way.",
+  "success.continue": "Continue Shopping",
+  "cancel.title": "Order cancelled",
+  "cancel.body": "No charge was made. Your cart is still saved — you can pick up where you left off.",
+  "cancel.backToShop": "Back to Shop",
   "common.close": "Close"
 }

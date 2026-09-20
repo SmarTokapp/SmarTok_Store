@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { useCart } from "@/store/cart";
 import { useT } from "@/i18n/provider";
@@ -9,6 +10,30 @@ export default function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, setQuantity, subtotal } =
     useCart();
   const { t } = useT();
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  const handleCheckout = async () => {
+    if (items.length === 0 || checkingOut) return;
+    setCheckingOut(true);
+    setCheckoutError(null);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "Checkout failed");
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      console.error("[checkout]", err);
+      setCheckoutError(t("cart.checkoutError"));
+      setCheckingOut(false);
+    }
+  };
 
   return (
     <>
@@ -159,15 +184,21 @@ export default function CartDrawer() {
             </div>
             <button
               type="button"
-              disabled
-              title={t("cart.checkoutNote")}
-              className="w-full cursor-not-allowed rounded-xl bg-[#00f3ff] py-3.5 text-sm font-bold uppercase tracking-wider text-black opacity-60"
+              onClick={handleCheckout}
+              disabled={checkingOut}
+              className={`w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wider transition-all ${
+                checkingOut
+                  ? "cursor-wait bg-[#00f3ff]/60 text-black"
+                  : "bg-[#00f3ff] text-black hover:shadow-[0_0_24px_rgba(0,243,255,0.4)]"
+              }`}
             >
-              {t("cart.checkout")}
+              {checkingOut ? t("cart.processing") : t("cart.checkout")}
             </button>
-            <p className="mt-2 text-center text-xs text-zinc-600">
-              {t("cart.checkoutNote")}
-            </p>
+            {checkoutError && (
+              <p className="mt-2 text-center text-xs text-red-400">
+                {checkoutError}
+              </p>
+            )}
           </div>
         )}
       </aside>
