@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { getLocale, getDictionary } from "@/i18n";
@@ -20,6 +20,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SmarTok Store",
   description: "The official SmarTok store — coming soon.",
+};
+
+// Critical for mobile: without an explicit device-width viewport, mobile
+// browsers render the page as a scaled-down desktop layout.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

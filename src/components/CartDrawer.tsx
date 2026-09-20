@@ -48,7 +48,7 @@ export default function CartDrawer() {
 
       {/* Panel */}
       <aside
-        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col border-l border-zinc-800 bg-zinc-950 shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed right-0 top-0 z-50 flex h-full w-[85vw] max-w-md flex-col border-l border-zinc-800 bg-zinc-950 shadow-2xl transition-transform duration-300 ease-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -115,18 +115,18 @@ export default function CartDrawer() {
                     <p className="text-xs text-zinc-500">{item.variantLabel}</p>
 
                     <div className="mt-auto flex items-center justify-between pt-2">
-                      {/* Quantity stepper */}
-                      <div className="flex items-center gap-2 rounded-lg border border-zinc-700">
+                      {/* Quantity stepper — 44px touch targets */}
+                      <div className="flex items-center rounded-lg border border-zinc-700">
                         <button
                           type="button"
                           onClick={() =>
                             setQuantity(item.key, item.quantity - 1)
                           }
-                          className="px-2 py-1 text-zinc-400 transition-colors hover:text-[#00f3ff]"
+                          className="flex h-11 w-11 items-center justify-center text-lg text-zinc-400 transition-colors hover:text-[#00f3ff]"
                         >
                           −
                         </button>
-                        <span className="min-w-6 text-center text-sm font-medium text-white">
+                        <span className="min-w-7 text-center text-sm font-medium text-white">
                           {item.quantity}
                         </span>
                         <button
@@ -134,7 +134,7 @@ export default function CartDrawer() {
                           onClick={() =>
                             setQuantity(item.key, item.quantity + 1)
                           }
-                          className="px-2 py-1 text-zinc-400 transition-colors hover:text-[#00f3ff]"
+                          className="flex h-11 w-11 items-center justify-center text-lg text-zinc-400 transition-colors hover:text-[#00f3ff]"
                         >
                           +
                         </button>
@@ -150,7 +150,7 @@ export default function CartDrawer() {
                     type="button"
                     onClick={() => removeItem(item.key)}
                     aria-label={t("cart.remove")}
-                    className="self-start text-zinc-600 transition-colors hover:text-red-400"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center self-start rounded-lg text-zinc-600 transition-colors hover:bg-zinc-800 hover:text-red-400"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"

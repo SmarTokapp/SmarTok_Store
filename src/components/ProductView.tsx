@@ -119,7 +119,7 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
         </div>
 
         {images.length > 1 && (
-          <div className="flex gap-3 overflow-x-auto pb-1">
+          <div className="flex gap-3 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
             {images.map((img, i) => (
               <button
                 key={`${img.src}-${i}`}
@@ -174,7 +174,7 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
                       type="button"
                       onClick={() => handleSelect(i, value.id)}
                       title={value.title}
-                      className={`h-10 w-10 rounded-full border-2 transition-all ${
+                      className={`h-12 w-12 rounded-full border-2 transition-all ${
                         isSelected
                           ? "scale-110 border-[#00f3ff] ring-2 ring-[#00f3ff]/40"
                           : "border-zinc-700 hover:border-zinc-500"
@@ -189,7 +189,7 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
                     key={value.id}
                     type="button"
                     onClick={() => handleSelect(i, value.id)}
-                    className={`rounded-lg border px-4 py-2 text-sm font-semibold transition-all ${
+                    className={`flex min-h-11 items-center rounded-lg border px-4 py-2.5 text-sm font-semibold transition-all ${
                       isSelected
                         ? "border-[#00f3ff] bg-[#00f3ff]/10 text-[#00f3ff]"
                         : "border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-white"
@@ -208,21 +208,21 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
           <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-zinc-400">
             {t("product.quantity")}
           </p>
-          <div className="inline-flex items-center gap-3 rounded-lg border border-zinc-700 px-2 py-1">
+          <div className="inline-flex items-center rounded-lg border border-zinc-700">
             <button
               type="button"
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              className="px-3 py-1 text-lg text-zinc-400 transition-colors hover:text-[#00f3ff]"
+              className="flex h-12 w-12 items-center justify-center text-xl text-zinc-400 transition-colors hover:text-[#00f3ff]"
             >
               −
             </button>
-            <span className="min-w-8 text-center font-semibold text-white">
+            <span className="min-w-10 text-center font-semibold text-white">
               {quantity}
             </span>
             <button
               type="button"
               onClick={() => setQuantity((q) => q + 1)}
-              className="px-3 py-1 text-lg text-zinc-400 transition-colors hover:text-[#00f3ff]"
+              className="flex h-12 w-12 items-center justify-center text-xl text-zinc-400 transition-colors hover:text-[#00f3ff]"
             >
               +
             </button>

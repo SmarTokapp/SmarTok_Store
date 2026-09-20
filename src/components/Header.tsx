@@ -18,17 +18,17 @@ export default function Header() {
       {/* Main bar — 3-column grid keeps the nav optically centered
           regardless of logo/cart widths */}
       <div className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
-        <div className="mx-auto grid h-14 max-w-5xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6">
-          {/* Logo */}
+        <div className="mx-auto grid h-14 max-w-5xl grid-cols-[auto_1fr_auto] items-center gap-3 px-3 sm:px-6">
+          {/* Logo — shrink-0 so the 3-col grid never squishes it */}
           <Link
             href="/"
-            className="justify-self-start text-lg font-bold tracking-widest text-white transition-colors hover:text-[#00f3ff]"
+            className="shrink-0 text-base font-bold tracking-widest text-white transition-colors hover:text-[#00f3ff] sm:text-lg"
           >
             SMAR<span className="text-[#00f3ff]">TOK</span>
           </Link>
 
-          {/* Nav — centered */}
-          <nav className="flex items-center gap-8 text-sm font-medium text-zinc-400">
+          {/* Nav — centered in the flexible middle column */}
+          <nav className="flex min-w-0 items-center justify-center gap-6 text-sm font-medium text-zinc-400">
             <Link
               href="/"
               className="transition-colors hover:text-[#00f3ff]"
@@ -37,12 +37,12 @@ export default function Header() {
             </Link>
           </nav>
 
-          {/* Cart button */}
+          {/* Cart button — fixed 40px target, never squishes */}
           <button
             type="button"
             onClick={openCart}
             aria-label={t("cart.title")}
-            className="relative flex h-10 w-10 items-center justify-center justify-self-end rounded-full border border-zinc-700 text-zinc-300 transition-colors hover:border-[#00f3ff] hover:text-[#00f3ff]"
+            className="relative flex h-10 w-10 shrink-0 items-center justify-center justify-self-end rounded-full border border-zinc-700 text-zinc-300 transition-colors hover:border-[#00f3ff] hover:text-[#00f3ff]"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
