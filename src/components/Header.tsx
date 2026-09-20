@@ -27,14 +27,31 @@ export default function Header() {
             SMAR<span className="text-[#00f3ff]">TOK</span>
           </Link>
 
-          {/* Nav — centered in the flexible middle column */}
-          <nav className="flex min-w-0 items-center justify-center gap-6 text-sm font-medium text-zinc-400">
+          {/* Nav — centered in the flexible middle column.
+              Tight gap + smaller text on mobile so 3 links fit in 320px. */}
+          <nav className="flex min-w-0 items-center justify-center gap-3 text-xs font-medium text-zinc-400 sm:gap-6 sm:text-sm">
             <Link
               href="/"
-              className="transition-colors hover:text-[#00f3ff]"
+              className="whitespace-nowrap transition-colors hover:text-[#00f3ff]"
             >
               {t("nav.home")}
             </Link>
+            <a
+              href="https://smartok.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="whitespace-nowrap transition-colors hover:text-[#00f3ff]"
+            >
+              {t("nav.website")}
+            </a>
+            <a
+              href="https://support.smartok.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="whitespace-nowrap transition-colors hover:text-[#00f3ff]"
+            >
+              {t("nav.support")}
+            </a>
           </nav>
 
           {/* Cart button — fixed 40px target, never squishes */}
