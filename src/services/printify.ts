@@ -35,6 +35,18 @@ export interface PrintifyVariant {
   options: number[];
 }
 
+export interface PrintifyOptionValue {
+  id: number;
+  title: string;
+  colors?: string[]; // hex swatches (color-type options only)
+}
+
+export interface PrintifyOption {
+  name: string; // e.g. "Sizes", "Colors"
+  type: string; // e.g. "size", "color"
+  values: PrintifyOptionValue[];
+}
+
 export interface PrintifyProduct {
   id: string;
   title: string;
@@ -42,6 +54,7 @@ export interface PrintifyProduct {
   tags: string[];
   images: PrintifyImage[];
   variants: PrintifyVariant[];
+  options: PrintifyOption[];
   visible: boolean;
   is_locked: boolean;
   blueprint_id: number;
@@ -150,6 +163,38 @@ export async function getProducts(): Promise<PrintifyProduct[]> {
   } catch (err) {
     console.error("[printify] products fetch error:", err);
     return [];
+  }
+}
+
+/**
+ * Fetches a single product by id. Returns null on any failure.
+ */
+export async function getProduct(id: string): Promise<PrintifyProduct | null> {
+  const token = process.env.PRINTIFY_API_TOKEN;
+  if (!token) return null;
+
+  const shopId = await resolveShopId(token);
+  if (!shopId) return null;
+
+  try {
+    const res = await fetch(
+      `${PRINTIFY_API_BASE}/shops/${shopId}/products/${id}.json`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        next: { revalidate: 300 },
+      }
+    );
+    if (!res.ok) {
+      console.error(`[printify] product ${id} fetch failed: HTTP ${res.status}`);
+      return null;
+    }
+    return (await res.json()) as PrintifyProduct;
+  } catch (err) {
+    console.error(`[printify] product ${id} fetch error:`, err);
+    return null;
   }
 }
 
