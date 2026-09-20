@@ -98,9 +98,9 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
   };
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-2">
-      {/* ── Gallery ── */}
-      <div className="flex flex-col gap-4">
+    <div className="mx-auto grid w-full max-w-6xl gap-8 overflow-x-hidden px-4 py-8 sm:gap-10 sm:px-6 sm:py-10 lg:grid-cols-2">
+      {/* ── Gallery — min-w-0 lets the grid column shrink below content width ── */}
+      <div className="flex min-w-0 flex-col gap-4">
         <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
           {activeImage ? (
             <Image
@@ -119,7 +119,7 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
         </div>
 
         {images.length > 1 && (
-          <div className="flex gap-3 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
+          <div className="flex w-full max-w-full gap-3 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
             {images.map((img, i) => (
               <button
                 key={`${img.src}-${i}`}
@@ -144,10 +144,10 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
         )}
       </div>
 
-      {/* ── Details ── */}
-      <div className="flex flex-col gap-6">
+      {/* ── Details — min-w-0 lets the grid column shrink below content width ── */}
+      <div className="flex min-w-0 flex-col gap-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">
+          <h1 className="break-words text-2xl font-bold tracking-tight text-white sm:text-3xl">
             {product.title}
           </h1>
           <p className="mt-3 text-2xl font-bold text-[#00f3ff]">
@@ -261,10 +261,11 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
           </button>
         </div>
 
-        {/* Description (Printify HTML) */}
+        {/* Description (Printify HTML) — uncontrolled markup can contain
+            long URLs/tables; clamp every descendant to the column width */}
         {product.description && (
           <div
-            className="mt-2 border-t border-zinc-800 pt-6 text-sm leading-7 text-zinc-400 [&_a]:text-[#00f3ff] [&_li]:mb-1 [&_p]:mb-3 [&_strong]:text-white [&_ul]:list-disc [&_ul]:pl-5"
+            className="mt-2 overflow-hidden break-words border-t border-zinc-800 pt-6 text-sm leading-7 text-zinc-400 [&_*]:max-w-full [&_a]:break-all [&_a]:text-[#00f3ff] [&_img]:h-auto [&_li]:mb-1 [&_p]:mb-3 [&_strong]:text-white [&_table]:block [&_table]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5"
             dangerouslySetInnerHTML={{ __html: product.description }}
           />
         )}
