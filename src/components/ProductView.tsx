@@ -28,7 +28,10 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
     return init;
   });
 
-  const [imageIndex, setImageIndex] = useState(0);
+  // Manual thumbnail pick — null means "auto" (variant mockup / default).
+  // Reset to null whenever an option changes so color selection jumps to
+  // the matching variant mockup again.
+  const [manualIndex, setManualIndex] = useState<number | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
@@ -50,16 +53,21 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
 
   const price = matchedVariant?.price ?? getMinPrice(product);
 
-  // Prefer the mockup tagged for the selected variant, else gallery index
-  const activeImage = useMemo(() => {
+  // Image resolution order: manual thumbnail pick → variant mockup →
+  // Printify's default image → first image.
+  const activeIndex = useMemo(() => {
+    if (manualIndex !== null && images[manualIndex]) return manualIndex;
     if (matchedVariant) {
       const idx = images.findIndex((img) =>
         img.variant_ids?.includes(matchedVariant.id)
       );
-      if (idx >= 0) return images[idx]?.src ?? null;
+      if (idx >= 0) return idx;
     }
-    return images[imageIndex]?.src ?? getPrimaryImage(product);
-  }, [matchedVariant, images, imageIndex, product]);
+    const def = images.findIndex((img) => img.is_default);
+    return def >= 0 ? def : 0;
+  }, [manualIndex, matchedVariant, images]);
+
+  const activeImage = images[activeIndex]?.src ?? getPrimaryImage(product);
 
   const variantLabel = options
     .map((opt, i) => {
@@ -69,8 +77,10 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
     .filter(Boolean)
     .join(" / ");
 
-  const handleSelect = (optionIndex: number, valueId: number) =>
+  const handleSelect = (optionIndex: number, valueId: number) => {
     setSelection((prev) => ({ ...prev, [optionIndex]: valueId }));
+    setManualIndex(null); // back to auto so the variant mockup takes over
+  };
 
   const addToCart = () => {
     if (!matchedVariant || price === null) return;
@@ -114,9 +124,9 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
               <button
                 key={`${img.src}-${i}`}
                 type="button"
-                onClick={() => setImageIndex(i)}
+                onClick={() => setManualIndex(i)}
                 className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border transition-all ${
-                  images[imageIndex]?.src === img.src
+                  activeIndex === i
                     ? "border-[#00f3ff] ring-1 ring-[#00f3ff]/50"
                     : "border-zinc-800 hover:border-zinc-600"
                 }`}

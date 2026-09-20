@@ -15,24 +15,25 @@ export default function Header() {
         {t("announcement")}
       </div>
 
-      {/* Main bar */}
+      {/* Main bar — 3-column grid keeps the nav optically centered
+          regardless of logo/cart widths */}
       <div className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto grid h-14 max-w-5xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6">
           {/* Logo */}
           <Link
             href="/"
-            className="text-lg font-bold tracking-widest text-white transition-colors hover:text-[#00f3ff]"
+            className="justify-self-start text-lg font-bold tracking-widest text-white transition-colors hover:text-[#00f3ff]"
           >
             SMAR<span className="text-[#00f3ff]">TOK</span>
           </Link>
 
-          {/* Nav */}
-          <nav className="hidden items-center gap-8 text-sm font-medium text-zinc-400 sm:flex">
-            <Link href="/" className="transition-colors hover:text-[#00f3ff]">
+          {/* Nav — centered */}
+          <nav className="flex items-center gap-8 text-sm font-medium text-zinc-400">
+            <Link
+              href="/"
+              className="transition-colors hover:text-[#00f3ff]"
+            >
               {t("nav.home")}
-            </Link>
-            <Link href="/" className="transition-colors hover:text-[#00f3ff]">
-              {t("nav.shop")}
             </Link>
           </nav>
 
@@ -41,7 +42,7 @@ export default function Header() {
             type="button"
             onClick={openCart}
             aria-label={t("cart.title")}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-zinc-700 text-zinc-300 transition-colors hover:border-[#00f3ff] hover:text-[#00f3ff]"
+            className="relative flex h-10 w-10 items-center justify-center justify-self-end rounded-full border border-zinc-700 text-zinc-300 transition-colors hover:border-[#00f3ff] hover:text-[#00f3ff]"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
