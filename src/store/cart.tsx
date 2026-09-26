@@ -5,9 +5,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { getFirebase, STORE_USERS_COLLECTION } from "@/lib/firebase";
+import { useAuth } from "@/store/auth";
 
 export interface CartItem {
   key: string; // `${productId}:${variantId}`
@@ -36,10 +40,28 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "smartok-cart";
 
+/** Merge remote cart into local guest cart — quantities sum by variant key. */
+function mergeCarts(local: CartItem[], remote: CartItem[]): CartItem[] {
+  const map = new Map<string, CartItem>();
+  remote.forEach((i) => map.set(i.key, { ...i }));
+  local.forEach((i) => {
+    const existing = map.get(i.key);
+    if (existing) {
+      existing.quantity += i.quantity;
+    } else {
+      map.set(i.key, { ...i });
+    }
+  });
+  return Array.from(map.values());
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  // Prevents writing straight back the array we just applied from Firestore.
+  const lastSyncedRef = useRef<string>("[]");
 
   // Load persisted cart once (client only)
   useEffect(() => {
@@ -52,7 +74,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setHydrated(true);
   }, []);
 
-  // Persist on change (after hydration so we don't clobber stored data)
+  // On login: merge the guest cart into the account cart (once per session).
+  useEffect(() => {
+    if (!user || !hydrated) return;
+    const { db } = getFirebase();
+    if (!db) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, STORE_USERS_COLLECTION, user.uid));
+        if (cancelled) return;
+        const remote: CartItem[] = Array.isArray(snap.data()?.cart)
+          ? snap.data()!.cart
+          : [];
+        const merged = mergeCarts(items, remote);
+        if (JSON.stringify(merged) !== JSON.stringify(items)) {
+          setItems(merged);
+          lastSyncedRef.current = JSON.stringify(merged);
+        }
+        await setDoc(
+          doc(db, STORE_USERS_COLLECTION, user.uid),
+          { cart: merged, updatedAt: serverTimestamp() },
+          { merge: true }
+        );
+      } catch (err) {
+        console.warn("[cart] remote sync failed — staying local", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid, hydrated]);
+
+  // Persist on change: localStorage always, Firestore when logged in
+  // (after hydration so we don't clobber stored data).
   useEffect(() => {
     if (!hydrated) return;
     try {
@@ -60,7 +116,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch {
       // storage full/blocked — cart still works in-memory
     }
-  }, [items, hydrated]);
+    if (!user) return;
+    const serialized = JSON.stringify(items);
+    if (serialized === lastSyncedRef.current) return;
+    lastSyncedRef.current = serialized;
+    const { db } = getFirebase();
+    if (!db) return;
+    setDoc(
+      doc(db, STORE_USERS_COLLECTION, user.uid),
+      { cart: items, updatedAt: serverTimestamp() },
+      { merge: true }
+    ).catch((err) => console.warn("[cart] remote write failed", err));
+  }, [items, hydrated, user]);
 
   const value = useMemo<CartContextValue>(() => {
     const count = items.reduce((n, i) => n + i.quantity, 0);

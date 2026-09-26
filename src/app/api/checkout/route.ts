@@ -30,9 +30,11 @@ export async function POST(req: Request) {
   }
 
   let items: CheckoutItem[];
+  let uid: string | null = null;
   try {
     const body = await req.json();
     items = body?.items;
+    uid = typeof body?.uid === "string" && body.uid ? body.uid : null;
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
@@ -96,10 +98,53 @@ export async function POST(req: Request) {
   params.set("success_url", `${origin}/success`);
   params.set("cancel_url", `${origin}/cancel`);
 
+  // Physical goods: collect a shipping address — the Stripe webhook hands it
+  // to Printify for fulfillment. Country list is env-overridable.
+  const shippingCountries = (
+    process.env.STRIPE_SHIPPING_COUNTRIES ||
+    "US,CA,GB,IE,DE,FR,ES,IT,PT,NL,BE,LU,AT,CH,SE,NO,DK,FI,PL,CZ,AU,NZ,JP,MX,BR,AR,CL,CO"
+  )
+    .split(",")
+    .map((c) => c.trim().toUpperCase())
+    .filter(Boolean);
+  shippingCountries.forEach((c, i) => {
+    params.set(`shipping_address_collection[allowed_countries][${i}]`, c);
+  });
+  params.set("phone_number_collection[enabled]", "true");
+
+  // Order attribution + Printify mapping consumed by /api/webhooks/stripe.
+  // Per-line-item product metadata carries the Printify ids (session-level
+  // metadata values are capped at 500 chars — a compact JSON is kept as a
+  // fallback for small carts).
+  if (uid) {
+    params.set("client_reference_id", uid);
+    params.set("metadata[uid]", uid);
+  }
+  const compactItems = items.map((i) => ({
+    p: i.productId,
+    v: i.variantId,
+    q: Math.min(99, Math.max(1, Math.floor(i.quantity || 1))),
+  }));
+  const compactJson = JSON.stringify(compactItems);
+  if (compactJson.length <= 480) params.set("metadata[items]", compactJson);
+
   verified.forEach((item, i) => {
     params.set(`line_items[${i}][price_data][currency]`, "usd");
     params.set(`line_items[${i}][price_data][unit_amount]`, String(item.unitAmount));
     params.set(`line_items[${i}][price_data][product_data][name]`, item.name);
+    // Printify fulfillment mapping — survives into the created Product object.
+    params.set(
+      `line_items[${i}][price_data][product_data][metadata][product_id]`,
+      items[i].productId
+    );
+    params.set(
+      `line_items[${i}][price_data][product_data][metadata][variant_id]`,
+      String(items[i].variantId)
+    );
+    params.set(
+      `line_items[${i}][price_data][product_data][metadata][variant_label]`,
+      items[i].variantLabel || ""
+    );
     if (item.image) {
       params.set(`line_items[${i}][price_data][product_data][images][0]`, item.image);
     }

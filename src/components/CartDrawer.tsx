@@ -3,12 +3,14 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useCart } from "@/store/cart";
+import { useAuth } from "@/store/auth";
 import { useT } from "@/i18n/provider";
 import { formatPrice } from "@/utils/format";
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, setQuantity, subtotal } =
     useCart();
+  const { user } = useAuth();
   const { t } = useT();
   const [checkingOut, setCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -21,7 +23,7 @@ export default function CartDrawer() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items, uid: user?.uid ?? null }),
       });
       const data = await res.json();
       if (!res.ok || !data.url) {

@@ -215,3 +215,83 @@ export function getMinPrice(product: PrintifyProduct): number | null {
   if (enabled.length === 0) return null;
   return Math.min(...enabled.map((v) => v.price));
 }
+
+// ─── Orders ─────────────────────────────────────────────────────────────────
+
+export interface PrintifyOrderAddress {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  country: string;
+  region?: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  zip: string;
+}
+
+export interface PrintifyOrderLineItem {
+  product_id: string;
+  variant_id: number;
+  quantity: number;
+}
+
+/** Public wrapper around the cached shop-id resolver. */
+export async function getShopId(): Promise<string | null> {
+  const token = process.env.PRINTIFY_API_TOKEN;
+  if (!token) return null;
+  return resolveShopId(token);
+}
+
+/**
+ * Creates a Printify order for fulfillment.
+ * POST /v1/shops/{shop}/orders.json — returns the created order object
+ * (contains `id`) or null on failure.
+ */
+export async function createPrintifyOrder(params: {
+  externalId: string;
+  lineItems: PrintifyOrderLineItem[];
+  address: PrintifyOrderAddress;
+  shippingMethod?: number;
+}): Promise<{ id: string } | null> {
+  const token = process.env.PRINTIFY_API_TOKEN;
+  if (!token) {
+    console.error("[printify] PRINTIFY_API_TOKEN not set — cannot create order.");
+    return null;
+  }
+
+  const shopId = await resolveShopId(token);
+  if (!shopId) return null;
+
+  const body = {
+    external_id: params.externalId,
+    label: params.externalId,
+    line_items: params.lineItems,
+    shipping_method: params.shippingMethod ?? 1, // 1 = standard
+    send_shipping_notification: false,
+    address_to: params.address,
+  };
+
+  try {
+    const res = await fetch(`${PRINTIFY_API_BASE}/shops/${shopId}/orders.json`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      console.error(`[printify] order create failed: HTTP ${res.status}`, json);
+      return null;
+    }
+    console.log(`[printify] order created: ${json.id} (external: ${params.externalId})`);
+    return json as { id: string };
+  } catch (err) {
+    console.error("[printify] order create error:", err);
+    return null;
+  }
+}

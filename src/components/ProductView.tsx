@@ -11,6 +11,7 @@ import {
 import { useCart } from "@/store/cart";
 import { useT } from "@/i18n/provider";
 import { formatPrice } from "@/utils/format";
+import FavoriteButton from "@/components/FavoriteButton";
 
 export default function ProductView({ product }: { product: PrintifyProduct }) {
   const { addItem } = useCart();
@@ -102,6 +103,14 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
       {/* ── Gallery — min-w-0 lets the grid column shrink below content width ── */}
       <div className="flex min-w-0 flex-col gap-4">
         <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
+          <FavoriteButton
+            item={{
+              id: product.id,
+              title: product.title,
+              image: getPrimaryImage(product),
+              price,
+            }}
+          />
           {activeImage ? (
             <Image
               src={activeImage}
@@ -113,7 +122,7 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
             />
           ) : (
             <div className="flex h-full items-center justify-center text-zinc-700">
-              No image
+              {t("product.noImage")}
             </div>
           )}
         </div>

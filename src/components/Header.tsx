@@ -2,10 +2,16 @@
 
 import Link from "next/link";
 import { useCart } from "@/store/cart";
+import { useFavorites } from "@/store/favorites";
+import { useAuth } from "@/store/auth";
 import { useT } from "@/i18n/provider";
+import UserMenu from "@/components/UserMenu";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function Header() {
   const { count, openCart } = useCart();
+  const { favorites, openFavorites } = useFavorites();
+  const { user } = useAuth();
   const { t } = useT();
 
   return (
@@ -54,13 +60,44 @@ export default function Header() {
             </a>
           </nav>
 
-          {/* Cart button — fixed 40px target, never squishes */}
-          <button
-            type="button"
-            onClick={openCart}
-            aria-label={t("cart.title")}
-            className="relative flex h-10 w-10 shrink-0 items-center justify-center justify-self-end rounded-full border border-zinc-700 text-zinc-300 transition-colors hover:border-[#00f3ff] hover:text-[#00f3ff]"
-          >
+          {/* Right cluster — favorites (logged-in only), cart, auth */}
+          <div className="flex items-center gap-2 justify-self-end">
+            {user && (
+              <button
+                type="button"
+                onClick={openFavorites}
+                aria-label={t("favorites.title")}
+                className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-700 text-zinc-300 transition-colors hover:border-red-400 hover:text-red-400"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  className="h-5 w-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
+                  />
+                </svg>
+                {favorites.length > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
+                    {favorites.length > 99 ? "99+" : favorites.length}
+                  </span>
+                )}
+              </button>
+            )}
+
+            {/* Cart button — fixed 40px target, never squishes */}
+            <button
+              type="button"
+              onClick={openCart}
+              aria-label={t("cart.title")}
+              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-700 text-zinc-300 transition-colors hover:border-[#00f3ff] hover:text-[#00f3ff]"
+            >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -80,7 +117,11 @@ export default function Header() {
                 {count > 99 ? "99+" : count}
               </span>
             )}
-          </button>
+            </button>
+
+            <UserMenu />
+            <LanguageSwitcher />
+          </div>
         </div>
       </div>
     </header>

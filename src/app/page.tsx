@@ -48,6 +48,7 @@ export default async function Home() {
             key={product.id}
             product={product}
             fromLabel={dict["product.from"]}
+            noImageLabel={dict["product.noImage"]}
           />
         ))}
       </div>
