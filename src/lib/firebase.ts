@@ -2,20 +2,13 @@ import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 
-// Reuses the SmarTok ecosystem Firebase project (smartok-22402). Values can be
-// overridden via NEXT_PUBLIC_* env vars — e.g. a web-specific API key if the
-// Android key from google-services.json is referrer-restricted.
+// Reuses the SmarTok ecosystem Firebase project (smartok-22402). All values
+// come from NEXT_PUBLIC_* env vars — configure them in Vercel/local .env.
 const firebaseConfig = {
-  apiKey:
-    process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
-    "AIzaSyCQw3wCi25z6zil0COYLZsS69Q9aPg67zA",
-  authDomain:
-    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
-    "smartok-22402.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "smartok-22402",
-  storageBucket:
-    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
-    "smartok-22402.firebasestorage.app",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
