@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/store/cart";
 import { useFavorites } from "@/store/favorites";
@@ -13,6 +14,7 @@ export default function Header() {
   const { favorites, openFavorites } = useFavorites();
   const { user } = useAuth();
   const { t } = useT();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40">
@@ -34,8 +36,8 @@ export default function Header() {
           </Link>
 
           {/* Nav — centered in the flexible middle column.
-              Tight gap + smaller text on mobile so 3 links fit in 320px. */}
-          <nav className="flex min-w-0 items-center justify-center gap-3 text-xs font-medium text-zinc-400 sm:gap-6 sm:text-sm">
+              Desktop only: on mobile the links live in the hamburger menu. */}
+          <nav className="hidden min-w-0 items-center justify-center gap-6 text-sm font-medium text-zinc-400 md:flex">
             <Link
               href="/"
               className="whitespace-nowrap transition-colors hover:text-[#00f3ff]"
@@ -119,10 +121,71 @@ export default function Header() {
             )}
             </button>
 
-            <UserMenu />
-            <LanguageSwitcher />
+            {/* Auth + language — desktop only; mobile moves them into
+                the hamburger dropdown below */}
+            <div className="hidden items-center gap-2 md:flex">
+              <UserMenu />
+              <LanguageSwitcher />
+            </div>
+
+            {/* Hamburger — mobile only */}
+            <button
+              type="button"
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label={t("nav.menu")}
+              aria-expanded={menuOpen}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-700 text-zinc-300 transition-colors hover:border-[#00f3ff] hover:text-[#00f3ff] md:hidden"
+            >
+              {menuOpen ? (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile dropdown — Website/Support/Login/Language that don't fit
+            the compact top bar. Desktop is unaffected. */}
+        {menuOpen && (
+          <div className="border-t border-zinc-800 md:hidden">
+            <div className="mx-auto flex max-w-5xl flex-col px-3 pb-3 pt-1 sm:px-6">
+              <Link
+                href="/"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-lg px-3 py-3 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-[#00f3ff]"
+              >
+                {t("nav.home")}
+              </Link>
+              <a
+                href="https://smartok.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-lg px-3 py-3 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-[#00f3ff]"
+              >
+                {t("nav.website")}
+              </a>
+              <a
+                href="https://support.smartok.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-lg px-3 py-3 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-[#00f3ff]"
+              >
+                {t("nav.support")}
+              </a>
+              <div className="mt-1 flex items-center gap-2 border-t border-zinc-800 px-3 pt-3">
+                <UserMenu />
+                <LanguageSwitcher />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );
