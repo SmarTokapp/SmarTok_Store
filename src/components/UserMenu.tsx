@@ -11,6 +11,7 @@ export default function UserMenu() {
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click / Escape
@@ -78,7 +79,7 @@ export default function UserMenu() {
         aria-expanded={open}
         className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-700 bg-zinc-800 text-sm font-bold text-[#00f3ff] transition-colors hover:border-[#00f3ff]"
       >
-        {user.photoURL ? (
+        {user.photoURL && !avatarFailed ? (
           <Image
             src={user.photoURL}
             alt={user.name}
@@ -86,6 +87,7 @@ export default function UserMenu() {
             height={40}
             className="h-full w-full object-cover"
             referrerPolicy="no-referrer"
+            onError={() => setAvatarFailed(true)}
           />
         ) : (
           initials || "?"
