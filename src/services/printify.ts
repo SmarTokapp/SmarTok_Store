@@ -208,6 +208,22 @@ export function getPrimaryImage(product: PrintifyProduct): string | null {
 }
 
 /** Lowest enabled variant price, in cents. Null if none are enabled. */
+/** Pick the variant to use when the user hasn't chosen options. */
+export function getDefaultVariant(
+  product: PrintifyProduct
+): PrintifyVariant | null {
+  const variants = product.variants ?? [];
+  return (
+    variants.find(
+      (v) => v.is_default && v.is_enabled && v.is_available !== false
+    ) ??
+    variants.find((v) => v.is_enabled && v.is_available !== false) ??
+    variants.find((v) => v.is_enabled) ??
+    variants[0] ??
+    null
+  );
+}
+
 export function getMinPrice(product: PrintifyProduct): number | null {
   const enabled = (product.variants ?? []).filter(
     (v) => v.is_enabled && v.is_available !== false

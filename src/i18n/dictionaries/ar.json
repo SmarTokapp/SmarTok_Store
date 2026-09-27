@@ -47,6 +47,8 @@
   "favorites.remove": "إزالة من المفضلة",
   "favorites.empty": "لا توجد مفضلات بعد.",
   "favorites.emptyHint": "اضغط على القلب في أي منتج لحفظه هنا.",
+  "favorites.addToCart": "أضف إلى السلة",
+  "favorites.addAllToCart": "أضف الكل إلى السلة",
   "account.menu": "قائمة الحساب",
   "account.settings": "الإعدادات",
   "account.logout": "تسجيل الخروج",

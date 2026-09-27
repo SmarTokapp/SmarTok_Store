@@ -18,6 +18,9 @@ export interface FavoriteItem {
   title: string;
   image: string | null;
   price: number | null; // cents
+  /** Captured at favorite-time so the wishlist can add straight to cart. */
+  variantId?: number | null;
+  variantLabel?: string;
 }
 
 interface FavoritesContextValue {

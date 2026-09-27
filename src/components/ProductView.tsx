@@ -109,6 +109,8 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
               title: product.title,
               image: getPrimaryImage(product),
               price,
+              variantId: matchedVariant?.id ?? null,
+              variantLabel: variantLabel || undefined,
             }}
           />
           {activeImage ? (

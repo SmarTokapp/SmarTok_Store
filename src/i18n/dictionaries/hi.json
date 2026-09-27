@@ -47,6 +47,8 @@
   "favorites.remove": "फेवरिट से हटाएं",
   "favorites.empty": "अभी कोई फेवरिट नहीं।",
   "favorites.emptyHint": "किसी भी प्रोडक्ट पर दिल का आइकन टैप करके उसे यहां सहेजें।",
+  "favorites.addToCart": "कार्ट में जोड़ें",
+  "favorites.addAllToCart": "सभी को कार्ट में जोड़ें",
   "account.menu": "खाता मेनू",
   "account.settings": "सेटिंग्स",
   "account.logout": "लॉग आउट",

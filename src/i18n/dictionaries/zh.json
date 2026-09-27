@@ -47,6 +47,8 @@
   "favorites.remove": "取消收藏",
   "favorites.empty": "暂无收藏。",
   "favorites.emptyHint": "点击任意商品上的爱心即可保存到这里。",
+  "favorites.addToCart": "加入购物车",
+  "favorites.addAllToCart": "全部加入购物车",
   "account.menu": "账户菜单",
   "account.settings": "设置",
   "account.logout": "退出登录",

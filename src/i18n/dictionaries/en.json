@@ -47,6 +47,8 @@
   "favorites.remove": "Remove from favorites",
   "favorites.empty": "No favorites yet.",
   "favorites.emptyHint": "Tap the heart on any product to save it here.",
+  "favorites.addToCart": "Add to Cart",
+  "favorites.addAllToCart": "Add all to cart",
   "account.menu": "Account menu",
   "account.settings": "Settings",
   "account.logout": "Log Out",

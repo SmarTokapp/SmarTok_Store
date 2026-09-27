@@ -31,7 +31,10 @@ interface CartContextValue {
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
-  addItem: (item: Omit<CartItem, "key">) => void;
+  addItem: (
+    item: Omit<CartItem, "key">,
+    opts?: { openCart?: boolean }
+  ) => void;
   removeItem: (key: string) => void;
   setQuantity: (key: string, quantity: number) => void;
   clear: () => void;
@@ -139,7 +142,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       isOpen,
       openCart: () => setIsOpen(true),
       closeCart: () => setIsOpen(false),
-      addItem: (item) => {
+      addItem: (item, opts) => {
         const key = `${item.productId}:${item.variantId}`;
         setItems((prev) => {
           const existing = prev.find((i) => i.key === key);
@@ -150,7 +153,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           }
           return [...prev, { ...item, key }];
         });
-        setIsOpen(true);
+        if (opts?.openCart !== false) setIsOpen(true);
       },
       removeItem: (key) => setItems((prev) => prev.filter((i) => i.key !== key)),
       setQuantity: (key, quantity) =>

@@ -47,6 +47,8 @@
   "favorites.remove": "Rimuovi dai preferiti",
   "favorites.empty": "Nessun preferito per ora.",
   "favorites.emptyHint": "Tocca il cuore su qualsiasi prodotto per salvarlo qui.",
+  "favorites.addToCart": "Aggiungi al carrello",
+  "favorites.addAllToCart": "Aggiungi tutto al carrello",
   "account.menu": "Menu account",
   "account.settings": "Impostazioni",
   "account.logout": "Esci",

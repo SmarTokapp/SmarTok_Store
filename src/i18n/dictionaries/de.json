@@ -47,6 +47,8 @@
   "favorites.remove": "Aus Favoriten entfernen",
   "favorites.empty": "Noch keine Favoriten.",
   "favorites.emptyHint": "Tippe bei einem Produkt auf das Herz, um es hier zu speichern.",
+  "favorites.addToCart": "In den Warenkorb",
+  "favorites.addAllToCart": "Alle in den Warenkorb",
   "account.menu": "Kontomenü",
   "account.settings": "Einstellungen",
   "account.logout": "Abmelden",

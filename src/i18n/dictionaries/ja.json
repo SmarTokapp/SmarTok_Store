@@ -47,6 +47,8 @@
   "favorites.remove": "お気に入りから削除",
   "favorites.empty": "お気に入りはまだありません。",
   "favorites.emptyHint": "商品のハートをタップすると、ここに保存されます。",
+  "favorites.addToCart": "カートに追加",
+  "favorites.addAllToCart": "すべてカートに追加",
   "account.menu": "アカウントメニュー",
   "account.settings": "設定",
   "account.logout": "ログアウト",

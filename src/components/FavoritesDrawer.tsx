@@ -1,14 +1,95 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useFavorites } from "@/store/favorites";
+import { useFavorites, type FavoriteItem } from "@/store/favorites";
+import { useCart } from "@/store/cart";
 import { useT } from "@/i18n/provider";
 import { formatPrice } from "@/utils/format";
 
 export default function FavoritesDrawer() {
   const { favorites, isOpen, closeFavorites, removeFavorite } = useFavorites();
+  const { addItem, openCart } = useCart();
   const { t } = useT();
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+  const [addingAll, setAddingAll] = useState(false);
+
+  /**
+   * Older favorites may lack variant info — resolve the product's default
+   * variant via the server (Printify token never reaches the client).
+   */
+  const resolveVariant = async (item: FavoriteItem) => {
+    if (item.variantId && item.price !== null) {
+      return {
+        variantId: item.variantId,
+        variantLabel: item.variantLabel ?? "",
+        price: item.price,
+      };
+    }
+    try {
+      const res = await fetch(`/api/products/${item.id}/variant`);
+      if (!res.ok) return null;
+      const data = (await res.json()) as {
+        variantId?: number;
+        variantLabel?: string;
+        price?: number;
+      };
+      if (!data.variantId || data.price === undefined) return null;
+      return {
+        variantId: data.variantId,
+        variantLabel: data.variantLabel ?? "",
+        price: data.price,
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  const addToCart = async (item: FavoriteItem): Promise<boolean> => {
+    const variant = await resolveVariant(item);
+    if (!variant) return false;
+    addItem(
+      {
+        productId: item.id,
+        variantId: variant.variantId,
+        title: item.title,
+        image: item.image,
+        price: variant.price,
+        quantity: 1,
+        variantLabel: variant.variantLabel,
+      },
+      { openCart: false }
+    );
+    return true;
+  };
+
+  const handleAdd = async (item: FavoriteItem) => {
+    if (await addToCart(item)) {
+      setAddedIds((prev) => new Set(prev).add(item.id));
+      setTimeout(() => {
+        setAddedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(item.id);
+          return next;
+        });
+      }, 2000);
+    }
+  };
+
+  const handleAddAll = async () => {
+    if (addingAll || favorites.length === 0) return;
+    setAddingAll(true);
+    let anyAdded = false;
+    for (const item of favorites) {
+      if (await addToCart(item)) anyAdded = true;
+    }
+    setAddingAll(false);
+    if (anyAdded) {
+      closeFavorites();
+      openCart();
+    }
+  };
 
   return (
     <>
@@ -82,10 +163,29 @@ export default function FavoritesDrawer() {
                     >
                       {item.title}
                     </Link>
-                    <div className="mt-auto flex items-center justify-between pt-2">
+                    {item.variantLabel && (
+                      <p className="mt-0.5 truncate text-xs text-zinc-500">
+                        {item.variantLabel}
+                      </p>
+                    )}
+                    <div className="mt-auto flex items-center justify-between gap-2 pt-2">
                       <span className="text-sm font-bold text-[#00f3ff]">
                         {item.price !== null ? formatPrice(item.price) : "—"}
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => handleAdd(item)}
+                        disabled={addedIds.has(item.id)}
+                        className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
+                          addedIds.has(item.id)
+                            ? "bg-emerald-500/15 text-emerald-400"
+                            : "bg-[#00f3ff]/10 text-[#00f3ff] hover:bg-[#00f3ff]/20"
+                        }`}
+                      >
+                        {addedIds.has(item.id)
+                          ? `✓ ${t("product.addedToCart")}`
+                          : t("favorites.addToCart")}
+                      </button>
                     </div>
                   </div>
 
@@ -104,6 +204,24 @@ export default function FavoritesDrawer() {
             </ul>
           )}
         </div>
+
+        {favorites.length > 0 && (
+          <div className="border-t border-zinc-800 px-6 py-4">
+            <button
+              type="button"
+              onClick={handleAddAll}
+              disabled={addingAll}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#00f3ff] px-5 py-3 text-sm font-bold text-black transition-all hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] disabled:cursor-wait disabled:opacity-70"
+            >
+              {addingAll && (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" />
+              )}
+              {addingAll
+                ? t("cart.processing")
+                : t("favorites.addAllToCart")}
+            </button>
+          </div>
+        )}
       </aside>
     </>
   );

@@ -10,6 +10,7 @@ export default function SettingsPage() {
   const { user, loading, openAuthModal, deleteAccount } = useAuth();
   const { t } = useT();
   const [deleting, setDeleting] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
 
   // Guests get bounced to the login modal, then back to home if they bail.
   useEffect(() => {
@@ -44,7 +45,7 @@ export default function SettingsPage() {
         {/* Profile card */}
         <div className="flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-800 text-lg font-bold text-[#00f3ff]">
-            {user.photoURL ? (
+            {user.photoURL && !avatarFailed ? (
               <Image
                 src={user.photoURL}
                 alt={user.name}
@@ -52,6 +53,7 @@ export default function SettingsPage() {
                 height={56}
                 className="h-full w-full object-cover"
                 referrerPolicy="no-referrer"
+                onError={() => setAvatarFailed(true)}
               />
             ) : (
               user.name.slice(0, 1).toUpperCase()
