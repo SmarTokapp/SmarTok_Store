@@ -15,6 +15,27 @@ export default function Header() {
   const { user } = useAuth();
   const { t } = useT();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [shareToast, setShareToast] = useState(false);
+
+  const handleShare = async () => {
+    setMenuOpen(false);
+    const shareData = { title: document.title, url: window.location.href };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch {
+        /* user cancelled the share sheet */
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setShareToast(true);
+      setTimeout(() => setShareToast(false), 2200);
+    } catch {
+      window.prompt("Copy this link:", window.location.href);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40">
@@ -92,6 +113,34 @@ export default function Header() {
                 )}
               </button>
             )}
+
+            {/* Share button — native share sheet (Web Share API), clipboard
+                fallback on unsupported browsers. Always visible so it works
+                in both desktop and mobile contexts. */}
+            <button
+              type="button"
+              onClick={handleShare}
+              aria-label="Share this page"
+              title="Share"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-700 text-zinc-300 transition-colors hover:border-[#00f3ff] hover:text-[#00f3ff]"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+              >
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+            </button>
 
             {/* Cart button — fixed 40px target, never squishes */}
             <button
@@ -187,6 +236,13 @@ export default function Header() {
           </div>
         )}
       </div>
+
+      {/* Clipboard-fallback toast */}
+      {shareToast && (
+        <div className="fixed bottom-8 left-1/2 z-[60] -translate-x-1/2 rounded-full border border-[#00f3ff] bg-zinc-950/95 px-6 py-3 text-sm font-medium text-zinc-100 shadow-lg">
+          Link copied!
+        </div>
+      )}
     </header>
   );
 }
