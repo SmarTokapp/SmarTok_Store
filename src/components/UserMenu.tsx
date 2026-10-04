@@ -95,7 +95,7 @@ export default function UserMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl">
+        <div className="absolute left-0 right-auto top-12 z-50 w-56 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl md:left-auto md:right-0">
           <div className="border-b border-zinc-800 px-4 py-3">
             <p className="truncate text-sm font-semibold text-white">
               {user.name}
