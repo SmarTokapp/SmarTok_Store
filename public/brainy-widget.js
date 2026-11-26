@@ -9,24 +9,54 @@
   var SITE = CFG.site || 'website';
   var GIFS = CFG.gifsBase || '/brainy/';
   var API = CFG.api || 'https://smartok-backend.onrender.com/api/public-brainy/chat';
+  var QUOTA_API = CFG.quotaApi || 'https://smartok-backend.onrender.com/api/public-brainy/quota';
   var CHIPS = CFG.chips || [];
   var SUBTITLE = CFG.subtitle || 'SmarTok Assistant';
   var DAILY_LIMIT = 15;
 
+  // ── persistent visitor identity + cached quota ────────────────────────────
+  function utcToday() { return new Date().toISOString().slice(0, 10); }
+
+  var VISITOR_ID;
+  try {
+    VISITOR_ID = localStorage.getItem('brainy_visitor_id');
+    if (!VISITOR_ID) {
+      VISITOR_ID = (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+      localStorage.setItem('brainy_visitor_id', VISITOR_ID);
+    }
+  } catch (e) {
+    VISITOR_ID = 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+  }
+
+  function readQuotaCache() {
+    try {
+      var c = JSON.parse(localStorage.getItem('brainy_quota_cache') || 'null');
+      if (c && c.date === utcToday() && typeof c.remaining === 'number') return c.remaining;
+    } catch (e) { /* ignore */ }
+    return null;
+  }
+  function writeQuotaCache(remaining) {
+    try {
+      localStorage.setItem('brainy_quota_cache', JSON.stringify({ date: utcToday(), remaining: remaining }));
+    } catch (e) { /* ignore */ }
+  }
+
   // ── tiny i18n for widget chrome (welcome bubble, placeholders, errors) ──
   var STR = {
-    en: { bubble: 'Hi! Need help? Ask Brainy!', placeholder: 'Ask Brainy…', welcome: "Hi! I'm Brainy, SmarTok's mascot. Ask me anything about this page!", limit: "You've reached today's message limit — please come back tomorrow!", error: 'Oops — something went wrong. Please try again.', thinking: 'Brainy is thinking…', remaining: 'left today' },
-    es: { bubble: '¡Hola! ¿Necesitas ayuda? ¡Pregúntale a Brainy!', placeholder: 'Pregúntale a Brainy…', welcome: '¡Hola! Soy Brainy, la mascota de SmarTok. ¡Pregúntame lo que quieras sobre esta página!', limit: 'Alcanzaste el límite de mensajes de hoy — ¡vuelve mañana!', error: 'Ups — algo salió mal. Inténtalo de nuevo.', thinking: 'Brainy está pensando…', remaining: 'restantes hoy' },
-    fr: { bubble: 'Salut ! Besoin d’aide ? Demandez à Brainy !', placeholder: 'Demandez à Brainy…', welcome: 'Salut ! Je suis Brainy, la mascotte de SmarTok. Posez-moi vos questions sur cette page !', limit: 'Limite de messages du jour atteinte — revenez demain !', error: 'Oups — une erreur est survenue. Réessayez.', thinking: 'Brainy réfléchit…', remaining: 'restants aujourd’hui' },
-    de: { bubble: 'Hallo! Brauchst du Hilfe? Frag Brainy!', placeholder: 'Frag Brainy…', welcome: 'Hallo! Ich bin Brainy, das Maskottchen von SmarTok. Frag mich alles über diese Seite!', limit: 'Tageslimit erreicht — komm morgen wieder!', error: 'Ups — etwas ist schiefgelaufen. Bitte erneut versuchen.', thinking: 'Brainy denkt nach…', remaining: 'heute übrig' },
-    pt: { bubble: 'Oi! Precisa de ajuda? Pergunte ao Brainy!', placeholder: 'Pergunte ao Brainy…', welcome: 'Oi! Sou o Brainy, o mascote do SmarTok. Pergunte-me qualquer coisa sobre esta página!', limit: 'Limite diário de mensagens atingido — volte amanhã!', error: 'Ops — algo deu errado. Tente novamente.', thinking: 'Brainy está pensando…', remaining: 'restantes hoje' },
-    it: { bubble: 'Ciao! Serve aiuto? Chiedi a Brainy!', placeholder: 'Chiedi a Brainy…', welcome: 'Ciao! Sono Brainy, la mascotte di SmarTok. Chiedimi pure qualsiasi cosa su questa pagina!', limit: 'Limite giornaliero di messaggi raggiunto — torna domani!', error: 'Ops — qualcosa è andato storto. Riprova.', thinking: 'Brainy sta pensando…', remaining: 'rimasti oggi' },
-    ja: { bubble: 'こんにちは！お困りですか？Brainyに聞いてみて！', placeholder: 'Brainyに聞く…', welcome: 'こんにちは！SmarTokのマスコット、Brainyです。このページについて何でも聞いてください！', limit: '本日のメッセージ上限に達しました。また明日どうぞ！', error: 'エラーが発生しました。もう一度お試しください。', thinking: 'Brainyが考えています…', remaining: '本日の残り' },
-    zh: { bubble: '你好！需要帮助吗？问问 Brainy 吧！', placeholder: '问问 Brainy…', welcome: '你好！我是 Brainy，SmarTok 的吉祥物。关于这个页面有什么想问的尽管问我！', limit: '已达到今日消息上限——请明天再来！', error: '出错了，请重试。', thinking: 'Brainy 正在思考…', remaining: '今日剩余' },
-    ar: { bubble: 'مرحباً! هل تحتاج مساعدة؟ اسأل Brainy!', placeholder: 'اسأل Brainy…', welcome: 'مرحباً! أنا Brainy، تميمة SmarTok. اسألني أي شيء عن هذه الصفحة!', limit: 'بلغت حد الرسائل اليومي — عد غداً!', error: 'حدث خطأ ما. حاول مرة أخرى.', thinking: 'Brainy يفكر…', remaining: 'متبقية اليوم' },
-    hi: { bubble: 'नमस्ते! मदद चाहिए? Brainy से पूछें!', placeholder: 'Brainy से पूछें…', welcome: 'नमस्ते! मैं Brainy हूँ, SmarTok का मैस्कट। इस पेज के बारे में कुछ भी पूछें!', limit: 'आज की मैसेज सीमा पूरी हो गई — कल फिर आएं!', error: 'कुछ गलत हो गया। कृपया फिर कोशिश करें।', thinking: 'Brainy सोच रहा है…', remaining: 'आज शेष' },
-    ko: { bubble: '안녕하세요! 도움이 필요하세요? Brainy에게 물어보세요!', placeholder: 'Brainy에게 물어보기…', welcome: '안녕하세요! 저는 SmarTok의 마스코트 Brainy입니다. 이 페이지에 대해 무엇이든 물어보세요!', limit: '오늘의 메시지 한도에 도달했습니다 — 내일 다시 방문해 주세요!', error: '오류가 발생했습니다. 다시 시도해 주세요.', thinking: 'Brainy가 생각 중…', remaining: '오늘 남은 횟수' },
-    ru: { bubble: '!  ?  Brainy!', placeholder: ' Brainy…', welcome: '!  Brainy,  SmarTok.      !', limit: '    —  !', error: '-   .   .', thinking: 'Brainy …', remaining: ' ' }
+    en: { bubble: 'Hi! Need help? Ask Brainy!', placeholder: 'Ask Brainy…', welcome: "Hi! I'm Brainy, SmarTok's mascot. Ask me anything about this page!", limit: "Daily limit reached (15/15). Come back tomorrow!", error: 'Oops — something went wrong. Please try again.', thinking: 'Brainy is thinking…', remaining: 'left today' },
+    es: { bubble: '¡Hola! ¿Necesitas ayuda? ¡Pregúntale a Brainy!', placeholder: 'Pregúntale a Brainy…', welcome: '¡Hola! Soy Brainy, la mascota de SmarTok. ¡Pregúntame lo que quieras sobre esta página!', limit: 'Límite diario alcanzado (15/15). ¡Vuelve mañana!', error: 'Ups — algo salió mal. Inténtalo de nuevo.', thinking: 'Brainy está pensando…', remaining: 'restantes hoy' },
+    fr: { bubble: 'Salut ! Besoin d’aide ? Demandez à Brainy !', placeholder: 'Demandez à Brainy…', welcome: 'Salut ! Je suis Brainy, la mascotte de SmarTok. Posez-moi vos questions sur cette page !', limit: 'Limite quotidienne atteinte (15/15). Revenez demain !', error: 'Oups — une erreur est survenue. Réessayez.', thinking: 'Brainy réfléchit…', remaining: 'restants aujourd’hui' },
+    de: { bubble: 'Hallo! Brauchst du Hilfe? Frag Brainy!', placeholder: 'Frag Brainy…', welcome: 'Hallo! Ich bin Brainy, das Maskottchen von SmarTok. Frag mich alles über diese Seite!', limit: 'Tageslimit erreicht (15/15). Komm morgen wieder!', error: 'Ups — etwas ist schiefgelaufen. Bitte erneut versuchen.', thinking: 'Brainy denkt nach…', remaining: 'heute übrig' },
+    pt: { bubble: 'Oi! Precisa de ajuda? Pergunte ao Brainy!', placeholder: 'Pergunte ao Brainy…', welcome: 'Oi! Sou o Brainy, o mascote do SmarTok. Pergunte-me qualquer coisa sobre esta página!', limit: 'Limite diário atingido (15/15). Volte amanhã!', error: 'Ops — algo deu errado. Tente novamente.', thinking: 'Brainy está pensando…', remaining: 'restantes hoje' },
+    it: { bubble: 'Ciao! Serve aiuto? Chiedi a Brainy!', placeholder: 'Chiedi a Brainy…', welcome: 'Ciao! Sono Brainy, la mascotte di SmarTok. Chiedimi pure qualsiasi cosa su questa pagina!', limit: 'Limite giornaliero raggiunto (15/15). Torna domani!', error: 'Ops — qualcosa è andato storto. Riprova.', thinking: 'Brainy sta pensando…', remaining: 'rimasti oggi' },
+    ja: { bubble: 'こんにちは！お困りですか？Brainyに聞いてみて！', placeholder: 'Brainyに聞く…', welcome: 'こんにちは！SmarTokのマスコット、Brainyです。このページについて何でも聞いてください！', limit: '1日の上限に達しました（15/15）。また明日どうぞ！', error: 'エラーが発生しました。もう一度お試しください。', thinking: 'Brainyが考えています…', remaining: '本日の残り' },
+    zh: { bubble: '你好！需要帮助吗？问问 Brainy 吧！', placeholder: '问问 Brainy…', welcome: '你好！我是 Brainy，SmarTok 的吉祥物。关于这个页面有什么想问的尽管问我！', limit: '今日限额已达上限（15/15）。请明天再来！', error: '出错了，请重试。', thinking: 'Brainy 正在思考…', remaining: '今日剩余' },
+    ar: { bubble: 'مرحباً! هل تحتاج مساعدة؟ اسأل Brainy!', placeholder: 'اسأل Brainy…', welcome: 'مرحباً! أنا Brainy، تميمة SmarTok. اسألني أي شيء عن هذه الصفحة!', limit: 'تم بلوغ الحد اليومي (15/15). عد غداً!', error: 'حدث خطأ ما. حاول مرة أخرى.', thinking: 'Brainy يفكر…', remaining: 'متبقية اليوم' },
+    hi: { bubble: 'नमस्ते! मदद चाहिए? Brainy से पूछें!', placeholder: 'Brainy से पूछें…', welcome: 'नमस्ते! मैं Brainy हूँ, SmarTok का मैस्कट। इस पेज के बारे में कुछ भी पूछें!', limit: 'दैनिक सीमा पूरी (15/15)। कल फिर आएं!', error: 'कुछ गलत हो गया। कृपया फिर कोशिश करें।', thinking: 'Brainy सोच रहा है…', remaining: 'आज शेष' },
+    ko: { bubble: '안녕하세요! 도움이 필요하세요? Brainy에게 물어보세요!', placeholder: 'Brainy에게 물어보기…', welcome: '안녕하세요! 저는 SmarTok의 마스코트 Brainy입니다. 이 페이지에 대해 무엇이든 물어보세요!', limit: '일일 한도 도달 (15/15). 내일 다시 방문해 주세요!', error: '오류가 발생했습니다. 다시 시도해 주세요.', thinking: 'Brainy가 생각 중…', remaining: '오늘 남은 횟수' },
+  ru: { bubble: 'Привет! Нужна помощь? Спросите Brainy!', placeholder: 'Спросите Brainy…', welcome: 'Привет! Я Brainy, маскот SmarTok. Спрашивайте что угодно об этой странице!', limit: 'Дневной лимит исчерпан (15/15). Возвращайтесь завтра!', error: 'Упс — что-то пошло не так. Попробуйте ещё раз.', thinking: 'Brainy думает…', remaining: 'осталось сегодня' }
   };
 
   function pageLang() {
@@ -109,13 +139,18 @@
   els.bubbleText.textContent = T.bubble;
   els.sub.textContent = SUBTITLE;
   els.input.placeholder = T.placeholder;
-  updateQuota(DAILY_LIMIT);
+
+  // Restore the last-known quota instantly (survives reloads), then sync the
+  // authoritative count from PostgreSQL — the server enforces IP + visitorId.
+  var cachedRemaining = readQuotaCache();
+  updateQuota(cachedRemaining == null ? DAILY_LIMIT : cachedRemaining);
 
   // ── state ────────────────────────────────────────────────────────────────
   var history = [];       // last turns: {role:'user'|'model', text}
   var remaining = DAILY_LIMIT;
   var busy = false;
   var welcomed = false;
+  var limitNotified = false;
 
   function setAvatar(state) {
     var file = state === 'thinking' ? 'BrainyThinking.gif'
@@ -127,7 +162,18 @@
 
   function updateQuota(n) {
     remaining = Math.max(0, n);
+    writeQuotaCache(remaining);
     els.quota.textContent = remaining + '/' + DAILY_LIMIT + ' ' + T.remaining;
+    var exhausted = remaining <= 0;
+    els.input.disabled = exhausted;
+    els.send.disabled = exhausted || busy;
+    if (exhausted) {
+      renderChips(); // clears chips — they stay hidden while limit is hit
+      if (!limitNotified && els.chat.classList.contains('open')) {
+        limitNotified = true;
+        addMsg(T.limit, 'error');
+      }
+    }
   }
 
   function scrollBottom() {
@@ -145,7 +191,7 @@
 
   function renderChips() {
     els.chips.innerHTML = '';
-    if (!CHIPS.length || busy) return;
+    if (!CHIPS.length || busy || remaining <= 0) return;
     CHIPS.forEach(function (chip) {
       var b = document.createElement('button');
       b.className = 'brainy-chip';
@@ -197,7 +243,7 @@
     fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg, history: history.slice(0, -1), site: SITE, lang: LANG })
+      body: JSON.stringify({ message: msg, history: history.slice(0, -1), site: SITE, lang: LANG, visitorId: VISITOR_ID })
     })
       .then(function (r) {
         return r.json().then(function (j) { return { status: r.status, body: j }; });
@@ -228,9 +274,9 @@
       })
       .finally(function () {
         busy = false;
-        els.send.disabled = false;
+        els.send.disabled = remaining <= 0;
         renderChips();
-        els.input.focus();
+        if (remaining > 0) els.input.focus();
       });
   }
 
@@ -250,6 +296,17 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') closeChat();
   });
+
+  // Sync the authoritative remaining count from the server on every load.
+  // GET /quota never increments — safe to call on init.
+  fetch(QUOTA_API + '?site=' + encodeURIComponent(SITE) + '&visitorId=' + encodeURIComponent(VISITOR_ID))
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (j) {
+      if (j && j.ok && typeof j.remainingToday === 'number') {
+        updateQuota(j.remainingToday);
+      }
+    })
+    .catch(function () { /* offline / CORS — keep cached value */ });
 
   // Auto-settle the welcome bubble after 10s (reappears next page load).
   setTimeout(function () {
