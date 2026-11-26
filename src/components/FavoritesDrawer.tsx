@@ -151,6 +151,7 @@ export default function FavoritesDrawer() {
                         fill
                         sizes="80px"
                         className="object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
                     )}
                   </Link>

@@ -106,6 +106,7 @@ export default function CartDrawer() {
                         fill
                         sizes="80px"
                         className="object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
                     )}
                   </div>

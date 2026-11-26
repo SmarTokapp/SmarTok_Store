@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import {
   getPrimaryImage,
@@ -35,6 +35,7 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
   const [manualIndex, setManualIndex] = useState<number | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
 
   const selectedIds = Object.values(selection);
 
@@ -69,6 +70,12 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
   }, [manualIndex, matchedVariant, images]);
 
   const activeImage = images[activeIndex]?.src ?? getPrimaryImage(product);
+
+  // Reset the broken-image fallback whenever the active image changes so a
+  // new variant/mockup selection gets a fresh load attempt.
+  useEffect(() => {
+    setImgFailed(false);
+  }, [activeImage]);
 
   const variantLabel = options
     .map((opt, i) => {
@@ -113,7 +120,7 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
               variantLabel: variantLabel || undefined,
             }}
           />
-          {activeImage ? (
+          {activeImage && !imgFailed ? (
             <Image
               src={activeImage}
               alt={product.title}
@@ -121,6 +128,7 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
               priority
               sizes="(max-width: 1024px) 100vw, 50vw"
               className="object-cover"
+              onError={() => setImgFailed(true)}
             />
           ) : (
             <div className="flex h-full items-center justify-center text-zinc-700">
@@ -148,6 +156,7 @@ export default function ProductView({ product }: { product: PrintifyProduct }) {
                   fill
                   sizes="80px"
                   className="object-cover"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
               </button>
             ))}
