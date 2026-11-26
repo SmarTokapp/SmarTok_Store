@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { getLocale, getDictionary } from "@/i18n";
@@ -60,6 +61,21 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             </CartProvider>
           </AuthProvider>
         </I18nProvider>
+        {/* 🧠 Brainy floating chat widget — public support endpoint */}
+        <link rel="stylesheet" href="/brainy-widget.css" />
+        <Script id="brainy-widget-config" strategy="beforeInteractive">
+          {`window.BRAINY_WIDGET = {
+            site: 'store',
+            gifsBase: '/brainy/',
+            subtitle: 'SmarTok Store',
+            chips: [
+              'What merch can I buy?',
+              'How does checkout work?',
+              'How does my purchase support SmarTok?'
+            ]
+          };`}
+        </Script>
+        <Script src="/brainy-widget.js" strategy="afterInteractive" />
       </body>
     </html>
   );
